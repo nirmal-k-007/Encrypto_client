@@ -1,9 +1,16 @@
 package com.example.clientapp;
 
 import static com.example.clientapp.NetworkUtils.computeSHA256;
+import static com.example.clientapp.NetworkUtils.generateKeyPair;
+
+import android.content.ContentValues;
+import android.content.Context;
+import android.database.Cursor;
+import android.database.sqlite.SQLiteDatabase;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
@@ -20,6 +27,8 @@ import android.os.Parcel;
 import android.os.Parcelable;
 
 import androidx.annotation.NonNull;
+
+import java.security.KeyPair;
 
 class UserData implements Parcelable {
     String email,pwd,uname,otp,name,public_key=" ";
@@ -46,6 +55,10 @@ class UserData implements Parcelable {
             return new UserData[size];
         }
     };
+
+    public UserData() {
+
+    }
 
     public boolean getActive() {
         return active;
@@ -143,9 +156,183 @@ class UserData implements Parcelable {
     }
 }
 
+class NecessaryData implements Parcelable{
+
+    String uname,email,pwd,public_key,private_key;
+
+
+    protected NecessaryData(Parcel in) {
+        uname = in.readString();
+        email = in.readString();
+        pwd = in.readString();
+        public_key = in.readString();
+        private_key = in.readString();
+    }
+
+    public static final Creator<NecessaryData> CREATOR = new Creator<NecessaryData>() {
+        @Override
+        public NecessaryData createFromParcel(Parcel in) {
+            return new NecessaryData(in);
+        }
+
+        @Override
+        public NecessaryData[] newArray(int size) {
+            return new NecessaryData[size];
+        }
+    };
+
+    @Override
+    public int describeContents() {
+        return 0;
+    }
+
+    public String getUname() {
+        return uname;
+    }
+
+    public NecessaryData() {
+    }
+
+    public NecessaryData(String uname, String email, String pwd, String public_key, String private_key) {
+        this.uname = uname;
+        this.email = email;
+        this.pwd = pwd;
+        this.public_key = public_key;
+        this.private_key = private_key;
+    }
+
+    public void setUname(String uname) {
+        this.uname = uname;
+    }
+
+    public String getEmail() {
+        return email;
+    }
+
+    public void setEmail(String email) {
+        this.email = email;
+    }
+
+    public String getPwd() {
+        return pwd;
+    }
+
+    public void setPwd(String pwd) {
+        this.pwd = pwd;
+    }
+
+    public String getPublic_key() {
+        return public_key;
+    }
+
+    public void setPublic_key(String public_key) {
+        this.public_key = public_key;
+    }
+
+    public String getPrivate_key() {
+        return private_key;
+    }
+
+    public void setPrivate_key(String private_key) {
+        this.private_key = private_key;
+    }
+
+    @Override
+    public void writeToParcel(@NonNull Parcel parcel, int i) {
+        parcel.writeString(uname);
+        parcel.writeString(email);
+        parcel.writeString(pwd);
+        parcel.writeString(public_key);
+        parcel.writeString(private_key);
+    }
+
+
+
+}
+
+class UpdateData {
+    String email,pwd,public_key;
+
+    public UpdateData() {
+
+    }
+
+    public int getActive() {
+        return active;
+    }
+
+    public void setActive(int active) {
+        this.active = active;
+    }
+
+    int active;
+
+    public String getEmail() {
+        return email;
+    }
+
+    public void setEmail(String email) {
+        this.email = email;
+    }
+
+    public String getPublic_key() {
+        return public_key;
+    }
+
+    public void setPublic_key(String public_key) {
+        this.public_key = public_key;
+    }
+
+    public String getPwd() {
+        return pwd;
+    }
+
+    public void setPwd(String pwd) {
+        this.pwd = pwd;
+    }
+
+    public UpdateData(String email, String pwd, String public_key) {
+        this.email = email;
+        this.pwd = pwd;
+        this.public_key = public_key;
+    }
+}
+
 
 
 public class MainActivity extends AppCompatActivity {
+
+
+    public boolean replaceCredentials(String email, String password, String privateKey) {
+        // Create or open the database
+        ChatAppDatabaseHelper dbHelper = new ChatAppDatabaseHelper(this);
+        SQLiteDatabase db = dbHelper.getWritableDatabase();
+
+        try {
+            // Clear all data in the table
+            db.delete(ChatAppDatabaseHelper.TABLE_CREDENTIALS, null, null);
+
+            // Prepare the values to insert
+            ContentValues values = new ContentValues();
+            values.put(ChatAppDatabaseHelper.COLUMN_EMAIL, email);
+            values.put(ChatAppDatabaseHelper.COLUMN_PASSWORD, password);
+            values.put(ChatAppDatabaseHelper.COLUMN_PRIVATE_KEY, privateKey);
+
+            // Insert the new row
+            long result = db.insert(ChatAppDatabaseHelper.TABLE_CREDENTIALS, null, values);
+
+            // Check the result to confirm success
+            return result != -1;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return false;
+        } finally {
+            // Close the database
+            db.close();
+        }
+    }
+
+
 
 
     @Override
@@ -177,8 +364,52 @@ public class MainActivity extends AppCompatActivity {
 
 
                 NetworkUtils.makePostRequest(url, jsonInput, result -> {
-                    TextView textView = findViewById(R.id.txt);
-                    Toast.makeText(MainActivity.this, result, Toast.LENGTH_LONG).show();
+
+                    if(!result.equals("User Not Registered") && !result.equals("Wrong Password Entered"))
+                    {
+                        String[] keys = generateKeyPair();
+                        if(replaceCredentials(email,computeSHA256(pwd),keys[0]))
+                        {
+                            Toast.makeText(MainActivity.this, "Updated Private Key", Toast.LENGTH_LONG).show();
+                            System.out.println(keys[0]);
+                            UpdateData userdata = new UpdateData();
+                            userdata.setEmail(email);
+                            userdata.setPwd(computeSHA256(pwd));
+                            userdata.setPublic_key(keys[1]);
+
+                            NetworkUtils.makePostRequest("http://192.168.78.53:8080/updateCredentials",om.writeValueAsString(userdata),res->{
+                                if(res.equals("User Updated Successfully!!"))
+                                {
+                                    Toast.makeText(MainActivity.this, "Updated Public Key", Toast.LENGTH_SHORT).show();
+                                    Toast.makeText(MainActivity.this, "Welcome " + result, Toast.LENGTH_SHORT).show();
+                                    Intent intent = new Intent(MainActivity.this,ListActivity.class);
+                                    NecessaryData nd = new NecessaryData();
+                                    nd.setUname(result);
+                                    nd.setEmail(userdata.getEmail());
+                                    nd.setPrivate_key(keys[0]);
+                                    nd.setPublic_key(userdata.getPublic_key());
+                                    nd.setPwd(userdata.getPwd());
+                                    intent.putExtra("necessarydata",nd);
+                                    startActivity(intent);
+                                    finish();
+
+                                } else {
+                                    Toast.makeText(MainActivity.this, "Failed to Update Public Key", Toast.LENGTH_LONG).show();
+                                }
+                            });
+
+                        }
+                        else {
+                            Toast.makeText(MainActivity.this, "Failed to Update Private Key", Toast.LENGTH_LONG).show();
+                        }
+
+
+
+
+                    }
+                    else {
+                        Toast.makeText(MainActivity.this, result, Toast.LENGTH_LONG).show();
+                    }
                 });
 
             }

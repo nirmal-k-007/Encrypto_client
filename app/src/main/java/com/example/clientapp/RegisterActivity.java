@@ -5,8 +5,10 @@ import static com.example.clientapp.NetworkUtils.generateKeyPair;
 
 import android.content.ContentValues;
 import android.content.Intent;
+import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import android.widget.EditText;
 import android.widget.Toast;
@@ -140,23 +142,37 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 public class RegisterActivity extends AppCompatActivity {
 
-    public void insertCredentials(String email, String password, String privateKey) {
+    public boolean replaceCredentials(String email, String password, String privateKey) {
+        // Create or open the database
         ChatAppDatabaseHelper dbHelper = new ChatAppDatabaseHelper(this);
         SQLiteDatabase db = dbHelper.getWritableDatabase();
 
-        ContentValues values = new ContentValues();
-        values.put(ChatAppDatabaseHelper.COLUMN_EMAIL, email);
-        values.put(ChatAppDatabaseHelper.COLUMN_PASSWORD, password);
-        values.put(ChatAppDatabaseHelper.COLUMN_PRIVATE_KEY, privateKey);
+        try {
+            // Clear all data in the table
+            db.delete(ChatAppDatabaseHelper.TABLE_CREDENTIALS, null, null);
 
-        long result = db.insert(ChatAppDatabaseHelper.TABLE_CREDENTIALS, null, values);
-        if (result == -1) {
-            System.out.println("Insert failed");
-        } else {
-            System.out.println("Insert successful");
+            // Prepare the values to insert
+            ContentValues values = new ContentValues();
+            values.put(ChatAppDatabaseHelper.COLUMN_EMAIL, email);
+            values.put(ChatAppDatabaseHelper.COLUMN_PASSWORD, password);
+            values.put(ChatAppDatabaseHelper.COLUMN_PRIVATE_KEY, privateKey);
+
+            // Insert the new row
+            long result = db.insert(ChatAppDatabaseHelper.TABLE_CREDENTIALS, null, values);
+
+            // Check the result to confirm success
+            return result != -1;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return false;
+        } finally {
+            // Close the database
+            db.close();
         }
-        db.close();
     }
+
+
+
 
     @Override
     protected void onCreate( Bundle savedInstanceState) {
@@ -198,6 +214,7 @@ public class RegisterActivity extends AppCompatActivity {
 //                        }
 //                        Sign.writeToFile("ChatApp/AppData/UserCredentials.json",UserCredentials);
 
+
                         userdata.setPublic_key(keys[1]);
                         userdata.setActive(false);
                         String obj = null;
@@ -210,12 +227,23 @@ public class RegisterActivity extends AppCompatActivity {
                             Toast.makeText(RegisterActivity.this, result, Toast.LENGTH_LONG).show();
                             if(result.equals("User Created Successfully!!"))
                             {
-                                ChatAppDatabaseHelper dbHelper = new ChatAppDatabaseHelper(getApplicationContext());
-                                
-                                Toast.makeText(RegisterActivity.this, "You have already been signed in\nClose App and Open again to enjoy!!", Toast.LENGTH_LONG).show();
-                                Intent intent = new Intent(RegisterActivity.this,MainActivity.class);
-                                startActivity(intent);
-                                finish();
+                                if(replaceCredentials(userdata.getEmail(),userdata.getPwd(),keys[0]))
+                                {
+                                    Toast.makeText(RegisterActivity.this, "Updated Private Key Registration Successful!", Toast.LENGTH_LONG).show();
+                                    Intent intent = new Intent(RegisterActivity.this,ListActivity.class);
+                                    NecessaryData nd = new NecessaryData();
+                                    nd.setUname(userdata.getUname());
+                                    nd.setEmail(userdata.getEmail());
+                                    nd.setPrivate_key(keys[0]);
+                                    nd.setPublic_key(userdata.getPublic_key());
+                                    nd.setPwd(userdata.getPwd());
+                                    intent.putExtra("necessarydata",nd);
+                                    startActivity(intent);
+                                    finish();
+                                }
+                                else {
+                                    Toast.makeText(RegisterActivity.this, "Update of Private Key Failed!", Toast.LENGTH_LONG).show();
+                                }
                             }
                             else {
                                 Toast.makeText(RegisterActivity.this, result, Toast.LENGTH_LONG).show();

@@ -2,6 +2,8 @@ package com.example.clientapp;
 
 import android.os.AsyncTask;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
@@ -127,14 +129,18 @@ public class NetworkUtils {
             @Override
             protected void onPostExecute(String result) {
                 // Invoke callback with the result (server's response)
-                callback.onComplete(result);
+                try {
+                    callback.onComplete(result);
+                } catch (JsonProcessingException e) {
+                    throw new RuntimeException(e);
+                }
             }
         }.execute();
     }
 
     // Callback interface to handle the result
     public interface Callback {
-        void onComplete(String result);
+        void onComplete(String result) throws JsonProcessingException;
     }
 
 }
