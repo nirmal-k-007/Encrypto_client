@@ -33,6 +33,8 @@
         <activity android:name=".SignUpActivity"></activity>
         <activity android:name=".RegisterActivity"></activity>
         <activity android:name=".ListActivity"></activity>
+        <activity android:name=".ChatActivity"></activity>
+
 
 
     </application>

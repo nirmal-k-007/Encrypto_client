@@ -158,51 +158,27 @@ class UserData implements Parcelable {
 
 class NecessaryData implements Parcelable{
 
-    String uname,email,pwd,public_key,private_key;
+    String uname,email,pwd,public_key,private_key,to,to_public_key;
 
-
-    protected NecessaryData(Parcel in) {
-        uname = in.readString();
-        email = in.readString();
-        pwd = in.readString();
-        public_key = in.readString();
-        private_key = in.readString();
-    }
-
-    public static final Creator<NecessaryData> CREATOR = new Creator<NecessaryData>() {
-        @Override
-        public NecessaryData createFromParcel(Parcel in) {
-            return new NecessaryData(in);
-        }
-
-        @Override
-        public NecessaryData[] newArray(int size) {
-            return new NecessaryData[size];
-        }
-    };
-
-    @Override
-    public int describeContents() {
-        return 0;
+    public NecessaryData() {
     }
 
     public String getUname() {
         return uname;
     }
 
-    public NecessaryData() {
+    public void setUname(String uname) {
+        this.uname = uname;
     }
 
-    public NecessaryData(String uname, String email, String pwd, String public_key, String private_key) {
+    public NecessaryData(String uname, String email, String pwd, String public_key, String private_key, String to, String to_public_key) {
         this.uname = uname;
         this.email = email;
         this.pwd = pwd;
         this.public_key = public_key;
         this.private_key = private_key;
-    }
-
-    public void setUname(String uname) {
-        this.uname = uname;
+        this.to = to;
+        this.to_public_key = to_public_key;
     }
 
     public String getEmail() {
@@ -237,6 +213,49 @@ class NecessaryData implements Parcelable{
         this.private_key = private_key;
     }
 
+    public String getTo() {
+        return to;
+    }
+
+    public void setTo(String to) {
+        this.to = to;
+    }
+
+    public String getTo_public_key() {
+        return to_public_key;
+    }
+
+    public void setTo_public_key(String to_public_key) {
+        this.to_public_key = to_public_key;
+    }
+
+    protected NecessaryData(Parcel in) {
+        uname = in.readString();
+        email = in.readString();
+        pwd = in.readString();
+        public_key = in.readString();
+        private_key = in.readString();
+        to = in.readString();
+        to_public_key = in.readString();
+    }
+
+    public static final Creator<NecessaryData> CREATOR = new Creator<NecessaryData>() {
+        @Override
+        public NecessaryData createFromParcel(Parcel in) {
+            return new NecessaryData(in);
+        }
+
+        @Override
+        public NecessaryData[] newArray(int size) {
+            return new NecessaryData[size];
+        }
+    };
+
+    @Override
+    public int describeContents() {
+        return 0;
+    }
+
     @Override
     public void writeToParcel(@NonNull Parcel parcel, int i) {
         parcel.writeString(uname);
@@ -244,10 +263,9 @@ class NecessaryData implements Parcelable{
         parcel.writeString(pwd);
         parcel.writeString(public_key);
         parcel.writeString(private_key);
+        parcel.writeString(to);
+        parcel.writeString(to_public_key);
     }
-
-
-
 }
 
 class UpdateData {
@@ -303,7 +321,7 @@ class UpdateData {
 public class MainActivity extends AppCompatActivity {
 
 
-    public boolean replaceCredentials(String email, String password, String privateKey) {
+    public boolean replaceCredentials(String email, String password, String privateKey,String publicKey) {
         // Create or open the database
         ChatAppDatabaseHelper dbHelper = new ChatAppDatabaseHelper(this);
         SQLiteDatabase db = dbHelper.getWritableDatabase();
@@ -317,6 +335,7 @@ public class MainActivity extends AppCompatActivity {
             values.put(ChatAppDatabaseHelper.COLUMN_EMAIL, email);
             values.put(ChatAppDatabaseHelper.COLUMN_PASSWORD, password);
             values.put(ChatAppDatabaseHelper.COLUMN_PRIVATE_KEY, privateKey);
+            values.put(ChatAppDatabaseHelper.COLUMN_PUBLIC_KEY, publicKey);
 
             // Insert the new row
             long result = db.insert(ChatAppDatabaseHelper.TABLE_CREDENTIALS, null, values);
@@ -338,6 +357,7 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
         setContentView(R.layout.activity_main);
 
         // Example: Set a click listener on a button
@@ -353,7 +373,7 @@ public class MainActivity extends AppCompatActivity {
                 String pwd = pwdComp.getText().toString().trim();
 
 
-                String url = "http://192.168.78.53:8080/login";
+                String url = "http://192.168.221.53:8080/login";
                 ObjectMapper om = new ObjectMapper();
                 String jsonInput = null;
                 try {
@@ -368,20 +388,20 @@ public class MainActivity extends AppCompatActivity {
                     if(!result.equals("User Not Registered") && !result.equals("Wrong Password Entered"))
                     {
                         String[] keys = generateKeyPair();
-                        if(replaceCredentials(email,computeSHA256(pwd),keys[0]))
+                        if(replaceCredentials(email,computeSHA256(pwd),keys[0],keys[1]))
                         {
-                            Toast.makeText(MainActivity.this, "Updated Private Key", Toast.LENGTH_LONG).show();
+                            Toast.makeText(MainActivity.this, "Updated Locally", Toast.LENGTH_LONG).show();
                             System.out.println(keys[0]);
                             UpdateData userdata = new UpdateData();
                             userdata.setEmail(email);
                             userdata.setPwd(computeSHA256(pwd));
                             userdata.setPublic_key(keys[1]);
 
-                            NetworkUtils.makePostRequest("http://192.168.78.53:8080/updateCredentials",om.writeValueAsString(userdata),res->{
+                            NetworkUtils.makePostRequest("http://192.168.221.53:8080/updateCredentials",om.writeValueAsString(userdata),res->{
                                 if(res.equals("User Updated Successfully!!"))
                                 {
-                                    Toast.makeText(MainActivity.this, "Updated Public Key", Toast.LENGTH_SHORT).show();
-                                    Toast.makeText(MainActivity.this, "Welcome " + result, Toast.LENGTH_SHORT).show();
+                                    Toast.makeText(MainActivity.this, "Updated Server DB", Toast.LENGTH_SHORT).show();
+                                    //Toast.makeText(MainActivity.this, "Welcome " + result, Toast.LENGTH_SHORT).show();
                                     Intent intent = new Intent(MainActivity.this,ListActivity.class);
                                     NecessaryData nd = new NecessaryData();
                                     nd.setUname(result);
@@ -394,13 +414,13 @@ public class MainActivity extends AppCompatActivity {
                                     finish();
 
                                 } else {
-                                    Toast.makeText(MainActivity.this, "Failed to Update Public Key", Toast.LENGTH_LONG).show();
+                                    Toast.makeText(MainActivity.this, "Failed to Update Server DB", Toast.LENGTH_LONG).show();
                                 }
                             });
 
                         }
                         else {
-                            Toast.makeText(MainActivity.this, "Failed to Update Private Key", Toast.LENGTH_LONG).show();
+                            Toast.makeText(MainActivity.this, "Failed to Update Locally", Toast.LENGTH_LONG).show();
                         }
 
 

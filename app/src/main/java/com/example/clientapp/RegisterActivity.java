@@ -142,7 +142,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 public class RegisterActivity extends AppCompatActivity {
 
-    public boolean replaceCredentials(String email, String password, String privateKey) {
+    public boolean replaceCredentials(String email, String password, String privateKey,String publicKey) {
         // Create or open the database
         ChatAppDatabaseHelper dbHelper = new ChatAppDatabaseHelper(this);
         SQLiteDatabase db = dbHelper.getWritableDatabase();
@@ -156,6 +156,7 @@ public class RegisterActivity extends AppCompatActivity {
             values.put(ChatAppDatabaseHelper.COLUMN_EMAIL, email);
             values.put(ChatAppDatabaseHelper.COLUMN_PASSWORD, password);
             values.put(ChatAppDatabaseHelper.COLUMN_PRIVATE_KEY, privateKey);
+            values.put(ChatAppDatabaseHelper.COLUMN_PUBLIC_KEY, publicKey);
 
             // Insert the new row
             long result = db.insert(ChatAppDatabaseHelper.TABLE_CREDENTIALS, null, values);
@@ -223,11 +224,11 @@ public class RegisterActivity extends AppCompatActivity {
                         } catch (JsonProcessingException ex) {
                             throw new RuntimeException(ex);
                         }
-                        NetworkUtils.makePostRequest("http://192.168.78.53:8080/registration", obj, result -> {
+                        NetworkUtils.makePostRequest("http://192.168.221.53:8080/registration", obj, result -> {
                             Toast.makeText(RegisterActivity.this, result, Toast.LENGTH_LONG).show();
                             if(result.equals("User Created Successfully!!"))
                             {
-                                if(replaceCredentials(userdata.getEmail(),userdata.getPwd(),keys[0]))
+                                if(replaceCredentials(userdata.getEmail(),userdata.getPwd(),keys[0],keys[1]))
                                 {
                                     Toast.makeText(RegisterActivity.this, "Updated Private Key Registration Successful!", Toast.LENGTH_LONG).show();
                                     Intent intent = new Intent(RegisterActivity.this,ListActivity.class);

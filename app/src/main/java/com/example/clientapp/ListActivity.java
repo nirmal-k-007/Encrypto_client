@@ -1,6 +1,7 @@
 package com.example.clientapp;
 
 import android.annotation.SuppressLint;
+import android.content.Intent;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.os.Bundle;
@@ -30,10 +31,15 @@ public class ListActivity extends AppCompatActivity {
         search.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                NetworkUtils.makePostRequest("http://192.168.78.53:8080/searchUser",usrname.getText().toString().trim(),res->{
-                    if(res.equals("Yes"))
+                NetworkUtils.makePostRequest("http://192.168.221.53:8080/searchUser",usrname.getText().toString().trim(),res->{
+                    if(!res.equals("No") && !res.equals("Error"))
                     {
                         Toast.makeText(ListActivity.this, "Found!", Toast.LENGTH_SHORT).show();
+                        necessarydata.setTo(usrname.getText().toString().trim());
+                        necessarydata.setTo_public_key(res);
+                        Intent intent = new Intent(ListActivity.this,ChatActivity.class);
+                        intent.putExtra("necessarydata",necessarydata);
+                        startActivity(intent);
                     }
                     else {
                         Toast.makeText(ListActivity.this, "Not Found", Toast.LENGTH_SHORT).show();
