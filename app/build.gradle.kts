@@ -8,7 +8,7 @@ android {
 
     defaultConfig {
         applicationId = "com.example.clientapp"
-        minSdk = 24
+        minSdk = 26
         targetSdk = 34
         versionCode = 1
         versionName = "1.0"
@@ -45,6 +45,9 @@ dependencies {
 
     // Add Jackson dependency
     implementation("com.fasterxml.jackson.core:jackson-databind:2.15.2")
+
+    implementation("com.squareup.okhttp3:okhttp:4.9.3")
+    implementation("org.java-websocket:Java-WebSocket:1.5.2")
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.ext.junit)

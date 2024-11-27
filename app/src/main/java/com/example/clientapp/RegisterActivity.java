@@ -142,7 +142,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 public class RegisterActivity extends AppCompatActivity {
 
-    public boolean replaceCredentials(String email, String password, String privateKey,String publicKey) {
+    public boolean replaceCredentials(String email, String password, String privateKey,String publicKey,String uname,String name) {
         // Create or open the database
         ChatAppDatabaseHelper dbHelper = new ChatAppDatabaseHelper(this);
         SQLiteDatabase db = dbHelper.getWritableDatabase();
@@ -153,6 +153,8 @@ public class RegisterActivity extends AppCompatActivity {
 
             // Prepare the values to insert
             ContentValues values = new ContentValues();
+            values.put(ChatAppDatabaseHelper.COLUMN_USER_NAME, uname);
+            values.put(ChatAppDatabaseHelper.COLUMN_NAME, name);
             values.put(ChatAppDatabaseHelper.COLUMN_EMAIL, email);
             values.put(ChatAppDatabaseHelper.COLUMN_PASSWORD, password);
             values.put(ChatAppDatabaseHelper.COLUMN_PRIVATE_KEY, privateKey);
@@ -206,16 +208,6 @@ public class RegisterActivity extends AppCompatActivity {
 
                         String[] keys = generateKeyPair();
 
-
-//                        String UserCredentials = null;
-//                        try {
-//                            UserCredentials = new ObjectMapper().writeValueAsString(new FileObject(userdata.getEmail(),userdata.getPwd(),keys[0]));
-//                        } catch (JsonProcessingException ex) {
-//                            throw new RuntimeException(ex);
-//                        }
-//                        Sign.writeToFile("ChatApp/AppData/UserCredentials.json",UserCredentials);
-
-
                         userdata.setPublic_key(keys[1]);
                         userdata.setActive(false);
                         String obj = null;
@@ -224,16 +216,17 @@ public class RegisterActivity extends AppCompatActivity {
                         } catch (JsonProcessingException ex) {
                             throw new RuntimeException(ex);
                         }
-                        NetworkUtils.makePostRequest("http://192.168.221.53:8080/registration", obj, result -> {
+                        NetworkUtils.makePostRequest("http://[2409:40f4:205b:c5d0:2fd9:1576:a16:c73a]:8080/registration", obj, result -> {
                             Toast.makeText(RegisterActivity.this, result, Toast.LENGTH_LONG).show();
                             if(result.equals("User Created Successfully!!"))
                             {
-                                if(replaceCredentials(userdata.getEmail(),userdata.getPwd(),keys[0],keys[1]))
+                                if(replaceCredentials(userdata.getEmail(),userdata.getPwd(),keys[0],keys[1],userdata.getUname(),userdata.getName()))
                                 {
                                     Toast.makeText(RegisterActivity.this, "Updated Private Key Registration Successful!", Toast.LENGTH_LONG).show();
                                     Intent intent = new Intent(RegisterActivity.this,ListActivity.class);
                                     NecessaryData nd = new NecessaryData();
                                     nd.setUname(userdata.getUname());
+                                    nd.setName(userdata.getName());
                                     nd.setEmail(userdata.getEmail());
                                     nd.setPrivate_key(keys[0]);
                                     nd.setPublic_key(userdata.getPublic_key());

@@ -13,8 +13,8 @@ import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.util.Base64;
-
+import android.util.Base64;
+import okhttp3.*;
 public class NetworkUtils {
 
 
@@ -27,13 +27,11 @@ public class NetworkUtils {
 
             // Encode the private and public keys to Base64
             String encodedPrivateKey = null;
-            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
-                encodedPrivateKey = Base64.getEncoder().encodeToString(keyPair.getPrivate().getEncoded());
-            }
             String encodedPublicKey = null;
-            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
-                encodedPublicKey = Base64.getEncoder().encodeToString(keyPair.getPublic().getEncoded());
-            }
+
+            // Use android.util.Base64 for compatibility with older Android versions
+            encodedPrivateKey = Base64.encodeToString(keyPair.getPrivate().getEncoded(), Base64.NO_WRAP);
+            encodedPublicKey = Base64.encodeToString(keyPair.getPublic().getEncoded(), Base64.NO_WRAP);
 
             // Return both keys as an array (private key first, then public key)
             return new String[]{encodedPrivateKey, encodedPublicKey};
@@ -144,3 +142,8 @@ public class NetworkUtils {
     }
 
 }
+
+
+
+
+

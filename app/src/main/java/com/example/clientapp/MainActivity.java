@@ -4,17 +4,15 @@ import static com.example.clientapp.NetworkUtils.computeSHA256;
 import static com.example.clientapp.NetworkUtils.generateKeyPair;
 
 import android.content.ContentValues;
-import android.content.Context;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 
 import android.content.Intent;
+import android.database.sqlite.SQLiteException;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
-import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
@@ -27,8 +25,6 @@ import android.os.Parcel;
 import android.os.Parcelable;
 
 import androidx.annotation.NonNull;
-
-import java.security.KeyPair;
 
 class UserData implements Parcelable {
     String email,pwd,uname,otp,name,public_key=" ";
@@ -158,7 +154,7 @@ class UserData implements Parcelable {
 
 class NecessaryData implements Parcelable{
 
-    String uname,email,pwd,public_key,private_key,to,to_public_key;
+    String uname,name,email,pwd,public_key,private_key,to,to_public_key;
 
     public NecessaryData() {
     }
@@ -167,8 +163,32 @@ class NecessaryData implements Parcelable{
         return uname;
     }
 
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
     public void setUname(String uname) {
         this.uname = uname;
+    }
+
+    public NecessaryData(String email, String pwd, String public_key, String private_key) {
+        this.email = email;
+        this.pwd = pwd;
+        this.public_key = public_key;
+        this.private_key = private_key;
+    }
+
+    public NecessaryData( String email, String pwd, String public_key, String private_key ,String uname, String name) {
+        this.uname = uname;
+        this.name = name;
+        this.email = email;
+        this.pwd = pwd;
+        this.public_key = public_key;
+        this.private_key = private_key;
     }
 
     public NecessaryData(String uname, String email, String pwd, String public_key, String private_key, String to, String to_public_key) {
@@ -320,8 +340,50 @@ class UpdateData {
 
 public class MainActivity extends AppCompatActivity {
 
+    public NecessaryData Available() {
+        ChatAppDatabaseHelper dbHelper = new ChatAppDatabaseHelper(getApplicationContext());
+        SQLiteDatabase db = null;
+        Cursor cursor = null;
 
-    public boolean replaceCredentials(String email, String password, String privateKey,String publicKey) {
+        try {
+            db = dbHelper.getReadableDatabase();
+
+            // Query to get the first row from the Credentials table
+            cursor = db.rawQuery("SELECT * FROM " + ChatAppDatabaseHelper.TABLE_CREDENTIALS + " LIMIT 1", null);
+
+            if (cursor.moveToFirst()) {
+
+                String email = cursor.getString(cursor.getColumnIndexOrThrow(ChatAppDatabaseHelper.COLUMN_EMAIL));
+                String password = cursor.getString(cursor.getColumnIndexOrThrow(ChatAppDatabaseHelper.COLUMN_PASSWORD));
+                String privateKey = cursor.getString(cursor.getColumnIndexOrThrow(ChatAppDatabaseHelper.COLUMN_PRIVATE_KEY));
+                String publicKey = cursor.getString(cursor.getColumnIndexOrThrow(ChatAppDatabaseHelper.COLUMN_PUBLIC_KEY));
+                String uname = cursor.getString(cursor.getColumnIndexOrThrow(ChatAppDatabaseHelper.COLUMN_USER_NAME));
+                String name = cursor.getString(cursor.getColumnIndexOrThrow(ChatAppDatabaseHelper.COLUMN_USER_NAME));
+
+                NecessaryData nd = new NecessaryData();
+                nd.setName(name);
+                nd.setUname(uname);
+                nd.setPublic_key(publicKey);
+                nd.setPrivate_key(privateKey);
+                nd.setPwd(password);
+                nd.setEmail(email);
+
+                return nd;
+            }
+            else {
+                return null;  // No data found in the table
+            }
+        } catch (SQLiteException e) {
+            e.printStackTrace();
+            return null;  // Database or query error
+        } finally {
+            if (cursor != null) cursor.close();
+            if (db != null) db.close();  // Close the database
+        }
+    }
+
+
+    public boolean replaceCredentials(String email, String password, String privateKey,String publicKey,String uname,String name) {
         // Create or open the database
         ChatAppDatabaseHelper dbHelper = new ChatAppDatabaseHelper(this);
         SQLiteDatabase db = dbHelper.getWritableDatabase();
@@ -332,6 +394,8 @@ public class MainActivity extends AppCompatActivity {
 
             // Prepare the values to insert
             ContentValues values = new ContentValues();
+            values.put(ChatAppDatabaseHelper.COLUMN_USER_NAME, uname);
+            values.put(ChatAppDatabaseHelper.COLUMN_NAME, name);
             values.put(ChatAppDatabaseHelper.COLUMN_EMAIL, email);
             values.put(ChatAppDatabaseHelper.COLUMN_PASSWORD, password);
             values.put(ChatAppDatabaseHelper.COLUMN_PRIVATE_KEY, privateKey);
@@ -358,93 +422,99 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        setContentView(R.layout.activity_main);
+        NecessaryData nd = Available();
+        if(nd!=null)
+        {
+            Intent intent = new Intent(MainActivity.this, ListActivity.class);
+            intent.putExtra("necessarydata", nd);
+            startActivity(intent);
+            finish();
+        }
+        else {
 
-        // Example: Set a click listener on a button
-        Button btn = findViewById(R.id.submit);
-        btn.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
+            setContentView(R.layout.activity_main);
 
-                EditText emailComp = findViewById(R.id.email);
-                String email = emailComp.getText().toString().trim();
+            // Example: Set a click listener on a button
+            Button btn = findViewById(R.id.submit);
+            btn.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
 
-                EditText pwdComp = findViewById(R.id.cpwd);
-                String pwd = pwdComp.getText().toString().trim();
+                    EditText emailComp = findViewById(R.id.email);
+                    String email = emailComp.getText().toString().trim();
+
+                    EditText pwdComp = findViewById(R.id.cpwd);
+                    String pwd = pwdComp.getText().toString().trim();
 
 
-                String url = "http://192.168.221.53:8080/login";
-                ObjectMapper om = new ObjectMapper();
-                String jsonInput = null;
-                try {
-                    jsonInput = om.writeValueAsString(new UserData(email,computeSHA256(pwd),null,null,null));
-                } catch (JsonProcessingException e) {
-                    throw new RuntimeException(e);
+                    String url = "http://[2409:40f4:205b:c5d0:2fd9:1576:a16:c73a]:8080/login";
+                    ObjectMapper om = new ObjectMapper();
+                    String jsonInput = null;
+                    try {
+                        jsonInput = om.writeValueAsString(new UserData(email, computeSHA256(pwd), null, null, null));
+                    } catch (JsonProcessingException e) {
+                        throw new RuntimeException(e);
+                    }
+
+
+                    NetworkUtils.makePostRequest(url, jsonInput, result -> {
+
+                        if (!result.equals("User Not Registered") && !result.equals("Wrong Password Entered")) {
+                            String[] keys = generateKeyPair();
+                            String[] names = new ObjectMapper().readValue(result,String[].class);
+                            if (replaceCredentials(email, computeSHA256(pwd), keys[0], keys[1],names[0],names[1])) {
+                                Toast.makeText(MainActivity.this, "Updated Locally", Toast.LENGTH_LONG).show();
+                                System.out.println(keys[0]);
+                                UpdateData userdata = new UpdateData();
+                                userdata.setEmail(email);
+                                userdata.setPwd(computeSHA256(pwd));
+                                userdata.setPublic_key(keys[1]);
+
+                                NetworkUtils.makePostRequest("http://[2409:40f4:205b:c5d0:2fd9:1576:a16:c73a]:8080/updateCredentials", om.writeValueAsString(userdata), res -> {
+                                    if (res.equals("User Updated Successfully!!")) {
+                                        Toast.makeText(MainActivity.this, "Updated Server DB", Toast.LENGTH_SHORT).show();
+                                        //Toast.makeText(MainActivity.this, "Welcome " + result, Toast.LENGTH_SHORT).show();
+                                        Intent intent = new Intent(MainActivity.this, ListActivity.class);
+                                        NecessaryData nd = new NecessaryData();
+                                        nd.setUname(names[0]);
+                                        nd.setName(names[1]);
+                                        nd.setEmail(userdata.getEmail());
+                                        nd.setPrivate_key(keys[0]);
+                                        nd.setPublic_key(userdata.getPublic_key());
+                                        nd.setPwd(userdata.getPwd());
+                                        intent.putExtra("necessarydata", nd);
+                                        startActivity(intent);
+                                        finish();
+
+                                    } else {
+                                        Toast.makeText(MainActivity.this, "Failed to Update Server DB", Toast.LENGTH_LONG).show();
+                                    }
+                                });
+
+                            } else {
+                                Toast.makeText(MainActivity.this, "Failed to Update Locally", Toast.LENGTH_LONG).show();
+                            }
+
+
+                        } else {
+                            Toast.makeText(MainActivity.this, result, Toast.LENGTH_LONG).show();
+                        }
+                    });
+
                 }
+            });
 
-
-                NetworkUtils.makePostRequest(url, jsonInput, result -> {
-
-                    if(!result.equals("User Not Registered") && !result.equals("Wrong Password Entered"))
-                    {
-                        String[] keys = generateKeyPair();
-                        if(replaceCredentials(email,computeSHA256(pwd),keys[0],keys[1]))
-                        {
-                            Toast.makeText(MainActivity.this, "Updated Locally", Toast.LENGTH_LONG).show();
-                            System.out.println(keys[0]);
-                            UpdateData userdata = new UpdateData();
-                            userdata.setEmail(email);
-                            userdata.setPwd(computeSHA256(pwd));
-                            userdata.setPublic_key(keys[1]);
-
-                            NetworkUtils.makePostRequest("http://192.168.221.53:8080/updateCredentials",om.writeValueAsString(userdata),res->{
-                                if(res.equals("User Updated Successfully!!"))
-                                {
-                                    Toast.makeText(MainActivity.this, "Updated Server DB", Toast.LENGTH_SHORT).show();
-                                    //Toast.makeText(MainActivity.this, "Welcome " + result, Toast.LENGTH_SHORT).show();
-                                    Intent intent = new Intent(MainActivity.this,ListActivity.class);
-                                    NecessaryData nd = new NecessaryData();
-                                    nd.setUname(result);
-                                    nd.setEmail(userdata.getEmail());
-                                    nd.setPrivate_key(keys[0]);
-                                    nd.setPublic_key(userdata.getPublic_key());
-                                    nd.setPwd(userdata.getPwd());
-                                    intent.putExtra("necessarydata",nd);
-                                    startActivity(intent);
-                                    finish();
-
-                                } else {
-                                    Toast.makeText(MainActivity.this, "Failed to Update Server DB", Toast.LENGTH_LONG).show();
-                                }
-                            });
-
-                        }
-                        else {
-                            Toast.makeText(MainActivity.this, "Failed to Update Locally", Toast.LENGTH_LONG).show();
-                        }
-
-
-
-
-                    }
-                    else {
-                        Toast.makeText(MainActivity.this, result, Toast.LENGTH_LONG).show();
-                    }
-                });
-
-            }
-        });
-
-        Button button = findViewById(R.id.signup);
-        button.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                // Intent to redirect to SecondActivity
-                Intent intent = new Intent(MainActivity.this, SignUpActivity.class);
-                startActivity(intent);  // Start the second activity
-                finish();
-            }
-        });
+            Button button = findViewById(R.id.signup);
+            button.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    // Intent to redirect to SecondActivity
+                    Intent intent = new Intent(MainActivity.this, SignUpActivity.class);
+                    startActivity(intent);  // Start the second activity
+                    finish();
+                }
+            });
+        }
 
     }
 }

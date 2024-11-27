@@ -5,6 +5,7 @@ import android.content.Intent;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
@@ -24,17 +25,18 @@ public class ListActivity extends AppCompatActivity {
         NecessaryData necessarydata = getIntent().getParcelableExtra("necessarydata");
 
         TextView txt = findViewById(R.id.myid);
-        txt.setText(necessarydata.getUname());
+        System.out.println(necessarydata.getUname());
+        txt.setText(necessarydata.getName());
 
         Button search = findViewById(R.id.go);
         EditText usrname = findViewById(R.id.username);
         search.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                NetworkUtils.makePostRequest("http://192.168.221.53:8080/searchUser",usrname.getText().toString().trim(),res->{
+                NetworkUtils.makePostRequest("http://[2409:40f4:205b:c5d0:2fd9:1576:a16:c73a]:8080/searchUser",usrname.getText().toString().trim(),res->{
                     if(!res.equals("No") && !res.equals("Error"))
                     {
-                        Toast.makeText(ListActivity.this, "Found!", Toast.LENGTH_SHORT).show();
+                        Toast.makeText(ListActivity.this, "Found", Toast.LENGTH_SHORT).show();
                         necessarydata.setTo(usrname.getText().toString().trim());
                         necessarydata.setTo_public_key(res);
                         Intent intent = new Intent(ListActivity.this,ChatActivity.class);

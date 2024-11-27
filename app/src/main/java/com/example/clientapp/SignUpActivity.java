@@ -148,7 +148,7 @@ public class SignUpActivity extends AppCompatActivity {
         if(!otp.isEmpty()) {
             userdata.setOtp(otp);
             String obj = new String(om.writeValueAsString(userdata));
-            NetworkUtils.makePostRequest("http://192.168.221.53:8080/verification", obj, result -> {
+            NetworkUtils.makePostRequest("http://[2409:40f4:205b:c5d0:2fd9:1576:a16:c73a]:8080/verification", obj, result -> {
                 Toast.makeText(SignUpActivity.this, result, Toast.LENGTH_LONG).show();
             });
         }
@@ -164,7 +164,7 @@ public class SignUpActivity extends AppCompatActivity {
         if(!email.isEmpty()) {
             userdata = new UserData(email,null,null,null,null);
             String obj = new String(om.writeValueAsString(userdata));
-            NetworkUtils.makePostRequest("http://192.168.221.53:8080/generation", obj, result -> {
+            NetworkUtils.makePostRequest("http://[2409:40f4:205b:c5d0:2fd9:1576:a16:c73a]:8080/generation", obj, result -> {
                 if(result.equals("Generated"))
                 {
                     Toast.makeText(SignUpActivity.this, "Otp Sent to " + email, Toast.LENGTH_LONG).show();
@@ -194,7 +194,7 @@ public class SignUpActivity extends AppCompatActivity {
         btn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                Intent intent = new Intent(SignUpActivity.this, MainActivity.class);
+                Intent intent = new Intent(SignUpActivity.this, ChatActivity.class);
                 startActivity(intent);
             }
         });
