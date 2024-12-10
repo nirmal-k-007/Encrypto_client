@@ -307,7 +307,7 @@ public class ChatActivity extends AppCompatActivity {
     }
 
     private void connectWebSocket(String username,NecessaryData nd,LinearLayout msgctr) {
-        URI uri = URI.create("ws://[2409:40f4:205b:c5d0:2fd9:1576:a16:c73a]:8080/chat?username="+username);
+        URI uri = URI.create("ws://[2409:40f4:2058:e6db:e422:542a:7af0:4dcd]:8080/chat?username="+username);
 
         webSocketClient = new WebSocketClient(uri) {
             @Override

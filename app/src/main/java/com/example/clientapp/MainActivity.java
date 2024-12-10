@@ -447,7 +447,7 @@ public class MainActivity extends AppCompatActivity {
                     String pwd = pwdComp.getText().toString().trim();
 
 
-                    String url = "http://[2409:40f4:205b:c5d0:2fd9:1576:a16:c73a]:8080/login";
+                    String url = "http://[2409:40f4:2058:e6db:e422:542a:7af0:4dcd]:8080/login";
                     ObjectMapper om = new ObjectMapper();
                     String jsonInput = null;
                     try {
@@ -470,7 +470,7 @@ public class MainActivity extends AppCompatActivity {
                                 userdata.setPwd(computeSHA256(pwd));
                                 userdata.setPublic_key(keys[1]);
 
-                                NetworkUtils.makePostRequest("http://[2409:40f4:205b:c5d0:2fd9:1576:a16:c73a]:8080/updateCredentials", om.writeValueAsString(userdata), res -> {
+                                NetworkUtils.makePostRequest("http://[2409:40f4:2058:e6db:e422:542a:7af0:4dcd]:8080/updateCredentials", om.writeValueAsString(userdata), res -> {
                                     if (res.equals("User Updated Successfully!!")) {
                                         Toast.makeText(MainActivity.this, "Updated Server DB", Toast.LENGTH_SHORT).show();
                                         //Toast.makeText(MainActivity.this, "Welcome " + result, Toast.LENGTH_SHORT).show();

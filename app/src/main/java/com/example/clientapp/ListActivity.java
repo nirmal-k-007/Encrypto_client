@@ -33,7 +33,7 @@ public class ListActivity extends AppCompatActivity {
         search.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                NetworkUtils.makePostRequest("http://[2409:40f4:205b:c5d0:2fd9:1576:a16:c73a]:8080/searchUser",usrname.getText().toString().trim(),res->{
+                NetworkUtils.makePostRequest("http://[2409:40f4:2058:e6db:e422:542a:7af0:4dcd]:8080/searchUser",usrname.getText().toString().trim(),res->{
                     if(!res.equals("No") && !res.equals("Error"))
                     {
                         Toast.makeText(ListActivity.this, "Found", Toast.LENGTH_SHORT).show();

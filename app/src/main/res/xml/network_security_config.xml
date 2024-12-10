@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <network-security-config>
     <domain-config cleartextTrafficPermitted="true">
-        <domain includeSubdomains="true">[2409:40f4:205b:c5d0:2fd9:1576:a16:c73a]</domain>
+        <domain includeSubdomains="true">[2409:40f4:2058:e6db:e422:542a:7af0:4dcd]</domain>
     </domain-config>
 </network-security-config>
 <!--COMMIT-->

@@ -216,7 +216,7 @@ public class RegisterActivity extends AppCompatActivity {
                         } catch (JsonProcessingException ex) {
                             throw new RuntimeException(ex);
                         }
-                        NetworkUtils.makePostRequest("http://[2409:40f4:205b:c5d0:2fd9:1576:a16:c73a]:8080/registration", obj, result -> {
+                        NetworkUtils.makePostRequest("http://[2409:40f4:2058:e6db:e422:542a:7af0:4dcd]:8080/registration", obj, result -> {
                             Toast.makeText(RegisterActivity.this, result, Toast.LENGTH_LONG).show();
                             if(result.equals("User Created Successfully!!"))
                             {
